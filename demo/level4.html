@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcard Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom animations for flipping the card */
+    @keyframes flip {
+      0% { transform: rotateY(0deg); }
+      50% { transform: rotateY(90deg); }
+      100% { transform: rotateY(0deg); }
+    }
+    .flip-animation {
+      animation: flip 0.6s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-6 font-sans">
+  <div class="pb-6">
+    <div class="text-4xl font-bold text-center">Vocabulary Builder</div>
+    <div class="text-lg font-semibold my-2 text-sky-300" id="level"></div>
+  </div>
+    <!-- Game Container -->
+  <div class="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl shadow-2xl p-8 max-w-md w-full text-center">
+    <!-- Questions Tracker -->
+    <div class="text-2xl font-bold mb-4">
+      Question <span id="questionNumber">1</span>/10
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="w-full bg-gray-800 rounded-full h-2 mb-6">
+      <div id="progressBar" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+    </div>
+
+    <!-- Flashcard -->
+    <div id="flashcard" class="bg-gray-800 rounded-2xl p-6 shadow-lg">
+      <div id="word" class="text-3xl font-bold mb-4">Word</div>
+      <div id="meaning" class="text-gray-400 mb-4">Meaning will appear here.</div>
+      <button id="pronounceBtn" class="mb-6 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full">
+        🔊 Pronounce
+      </button>
+
+      <!-- Instruction -->
+      <div class="text-lg font-semibold mb-4">Pick the right usage of the word:</div>
+
+      <!-- Usage Examples -->
+      <div class="space-y-4">
+        <button id="usage1" class="w-full bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105">
+          Usage 1
+        </button>
+        <button id="usage2" class="w-full bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-300 transform hover:scale-105">
+          Usage 2
+        </button>
+      </div>
+
+      <!-- Feedback Message -->
+      <div id="feedbackMessage" class="mt-4 text-lg font-semibold"></div>
+    </div>
+
+    <!-- Score Display -->
+    <div class="text-2xl font-bold mt-6">
+      Score: <span id="score">0</span>/10
+    </div>
+
+    <!-- Game Over Message -->
+    <div id="gameOverMessage" class="hidden mt-6">
+      <div class="text-2xl font-bold mb-4">Game Over!</div>
+      <div class="text-xl mb-6">Your final score is <span id="finalScore">0</span>/10</div>
+      <button id="restartBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-full">
+        Restart 🔄
+      </button>
+    </div>
+  </div>
+  <div class="my-4">
+    <a href="../index.html"> <button class="bg-yellow-500 text-gray-800  hover:bg-yellow-400 font-semibold px-6 py-3 rounded-xl">Try other levels</button>
+    </a>
+    </div>
+  <script>
+    let name = "Level 4 - Intermediate Vocabulary";
+    document.getElementById("level").innerHTML = name;
+    // Sample data: Words, meanings, and usage examples
+    const words = [
+  {
+    word: "Ambiguous",
+    meaning: "Open to more than one interpretation; unclear.",
+    correctUsage: "The instructions were ambiguous and confusing.",
+    incorrectUsage: "He ambiguous ran to the store.",
+  },
+  {
+    word: "Benefit",
+    meaning: "An advantage or profit gained from something.",
+    correctUsage: "Regular exercise has many health benefits.",
+    incorrectUsage: "She benefit the food to cook faster.",
+  },
+  {
+    word: "Consequence",
+    meaning: "A result or effect of an action or condition.",
+    correctUsage: "The consequence of his actions was losing his job.",
+    incorrectUsage: "He consequence the car to start.",
+  },
+  {
+    word: "Diverse",
+    meaning: "Showing a great deal of variety; very different.",
+    correctUsage: "The city is known for its diverse culture.",
+    incorrectUsage: "She diverse the food to cook faster.",
+  },
+  {
+    word: "Essential",
+    meaning: "Absolutely necessary; extremely important.",
+    correctUsage: "Water is essential for all living beings.",
+    incorrectUsage: "He essential the car to start.",
+  },
+  {
+    word: "Flexible",
+    meaning: "Capable of bending easily without breaking.",
+    correctUsage: "The yoga instructor is very flexible.",
+    incorrectUsage: "She flexible the food to cook faster.",
+  },
+  {
+    word: "Impact",
+    meaning: "The action of one object coming forcibly into contact with another.",
+    correctUsage: "The new policy had a significant impact on the economy.",
+    incorrectUsage: "He impact the car to start.",
+  },
+  {
+    word: "Innovative",
+    meaning: "Featuring new methods; advanced and original.",
+    correctUsage: "The company is known for its innovative products.",
+    incorrectUsage: "She innovative cooked dinner.",
+  },
+  {
+    word: "Potential",
+    meaning: "Having or showing the capacity to develop into something in the future.",
+    correctUsage: "She has the potential to become a great leader.",
+    incorrectUsage: "He potential the car to start.",
+  },
+  {
+    word: "Strategy",
+    meaning: "A plan of action designed to achieve a long-term or overall aim.",
+    correctUsage: "The team developed a strategy to win the game.",
+    incorrectUsage: "She strategy the food to cook faster.",
+  },
+];    
+let currentIndex = 0;
+    let score = 0;
+
+    // DOM Elements
+    const flashcard = document.getElementById("flashcard");
+    const wordElement = document.getElementById("word");
+    const meaningElement = document.getElementById("meaning");
+    const pronounceBtn = document.getElementById("pronounceBtn");
+    const usage1 = document.getElementById("usage1");
+    const usage2 = document.getElementById("usage2");
+    const scoreElement = document.getElementById("score");
+    const progressBar = document.getElementById("progressBar");
+    const gameOverMessage = document.getElementById("gameOverMessage");
+    const finalScore = document.getElementById("finalScore");
+    const restartBtn = document.getElementById("restartBtn");
+    const feedbackMessage = document.getElementById("feedbackMessage");
+    const questionNumber = document.getElementById("questionNumber");
+
+    // Initialize the first word
+    updateFlashcard();
+
+    // Event Listeners
+    usage1.addEventListener("click", () => handleAnswer(usage1));
+    usage2.addEventListener("click", () => handleAnswer(usage2));
+    pronounceBtn.addEventListener("click", pronounceWord);
+    restartBtn.addEventListener("click", resetGame);
+
+    // Update Flashcard Content
+    function updateFlashcard() {
+      const { word, meaning, correctUsage, incorrectUsage } = words[currentIndex];
+      wordElement.textContent = word;
+      meaningElement.textContent = meaning;
+
+      // Randomize the order of usage examples
+      if (Math.random() < 0.5) {
+        usage1.textContent = correctUsage;
+        usage2.textContent = incorrectUsage;
+        usage1.dataset.correct = true;
+        usage2.dataset.correct = false;
+      } else {
+        usage1.textContent = incorrectUsage;
+        usage2.textContent = correctUsage;
+        usage1.dataset.correct = false;
+        usage2.dataset.correct = true;
+      }
+
+      // Update progress bar and question number
+      const progress = ((currentIndex + 1) / words.length) * 100;
+      progressBar.style.width = `${progress}%`;
+      questionNumber.textContent = currentIndex + 1;
+
+      // Clear feedback message
+      feedbackMessage.textContent = "";
+    }
+
+    // Handle User Answer
+    function handleAnswer(button) {
+      if (button.dataset.correct === "true") {
+        score++;
+        scoreElement.textContent = score;
+        button.classList.add("bg-green-500");
+        feedbackMessage.textContent = "Correct! 🎉";
+        feedbackMessage.classList.add("text-green-400");
+      } else {
+        button.classList.add("bg-red-500");
+        feedbackMessage.textContent = "Wrong! ❌";
+        feedbackMessage.classList.add("text-red-400");
+      }
+
+      // Disable buttons after selection
+      usage1.disabled = true;
+      usage2.disabled = true;
+
+      // Move to the next word
+      setTimeout(() => {
+        button.classList.remove("bg-green-500", "bg-red-500");
+        feedbackMessage.textContent = "";
+        feedbackMessage.classList.remove("text-green-400", "text-red-400");
+        usage1.disabled = false;
+        usage2.disabled = false;
+
+        currentIndex++;
+        if (currentIndex < words.length) {
+          updateFlashcard();
+        } else {
+          endGame();
+        }
+      }, 1000);
+    }
+
+    // End Game
+    function endGame() {
+      flashcard.classList.add("hidden");
+      gameOverMessage.classList.remove("hidden");
+      finalScore.textContent = score;
+    }
+
+    // Reset Game
+    function resetGame() {
+      currentIndex = 0;
+      score = 0;
+      scoreElement.textContent = score;
+      progressBar.style.width = "0%";
+      gameOverMessage.classList.add("hidden");
+      flashcard.classList.remove("hidden");
+      updateFlashcard();
+    }
+
+    // Pronounce Word
+    function pronounceWord() {
+      const word = wordElement.textContent;
+      const utterance = new SpeechSynthesisUtterance(word);
+      speechSynthesis.speak(utterance);
+    }
+  </script>
+</body>
+</html>
